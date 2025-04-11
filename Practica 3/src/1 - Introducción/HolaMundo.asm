@@ -3,8 +3,8 @@
 %define STDOUT 1        
 
 section .data         
-msg: db '¡Hola Mundo!', 10   
-len equ $ - msg             
+msg: db '¡Hola Mundo!', 10  ; 10 es el byte que indica el salto de linea y se lo concatena al hola mundo
+len equ $ - msg             ; len es igual a la posicion de memoria actual - el puntero donde comienza el msj que esta mas atras
 
 global _start           
 section .text           
