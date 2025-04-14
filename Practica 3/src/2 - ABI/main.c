@@ -9,8 +9,23 @@
 
 int main() {
 	/* Acá pueden realizar sus propias pruebas */
-	assert(alternate_sum_4_using_c(8, 2, 5, 1) == 6);
 
-	assert(alternate_sum_4_using_c_alternative(8, 2, 5, 1) == 6);
+	// Preguntar por lo del error si no le pongo malloc
+	uint32_t* res = malloc(sizeof(uint32_t*));
+	product_2_f(res, 1, 20);
+	assert(*res == 20);
+	free(res);
+
+	double* resD = malloc(sizeof(uint32_t*));
+	product_9_f(resD, 1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,1,1,1);
+	assert(*resD == 128);
+	free(resD);
+
+	assert(alternate_sum_4_using_c(8, 2, 5, 1) == 10);
+
+	assert(alternate_sum_4_using_c_alternative(8, 2, 5, 1) == 10);
+	
+	assert(alternate_sum_8(1,2,3,4,5,6,7,8) == (uint32_t)-4);
+
 	return 0;
 }

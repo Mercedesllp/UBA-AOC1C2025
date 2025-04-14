@@ -97,20 +97,56 @@ alternate_sum_4_using_c_alternative:
 
 
 ; uint32_t alternate_sum_8(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4, uint32_t x5, uint32_t x6, uint32_t x7, uint32_t x8);
-; registros y pila: x1[?], x2[?], x3[?], x4[?], x5[?], x6[?], x7[?], x8[?]
+; registros y pila: x1[edi], x2[esi], x3[edx], x4[ecx], x5[r8d], x6[r9d], x7[rbp + 16], x8[rbp + 24]
 alternate_sum_8:
 	;prologo
+  push rbp
+  mov rbp, rsp
 
-	; COMPLETAR
+  ; Paso a el valor que se retorna x1 (r = x1)
+  xor eax, eax
+  mov eax, edi 
+  
+  ; r -= x2
+  sub eax, esi
+  ; r += x3
+  add eax, edx
+  ; r -= x4
+  sub eax, ecx
+  ; r += x5
+  add eax, r8d
+  ; r -= x6
+  sub eax, r9d
+  ; r += x7
+  add eax, [rbp + 16]
+  ; r -= x8
+  sub eax, [rbp + 24]
 
 	;epilogo
+  pop rbp
 	ret
 
 
 ; SUGERENCIA: investigar uso de instrucciones para convertir enteros a floats y viceversa
 ;void product_2_f(uint32_t * destination, uint32_t x1, float f1);
-;registros: destination[?], x1[?], f1[?]
+;registros: destination[rdi], x1[esi], f1[xmm0]
 product_2_f:
+  push rbp
+  mov rbp, rsp
+
+  ; (double) x1 (lo paso a un rax limpio para no tener problemas con la parte alta de un registro sucio)
+  xor rax, rax
+  mov eax, esi
+  cvtsi2sd xmm1, eax
+  cvtss2sd xmm0, xmm0
+  ; x1 *= f1
+  mulsd xmm0, xmm1
+  ; (uint32_t) x1 (lo usan truncado)
+  cvttsd2si eax, xmm0
+  ; *destination = x1
+  mov dword [rdi], eax
+
+  pop rbp
 	ret
 
 
@@ -118,22 +154,65 @@ product_2_f:
 ;, uint32_t x1, float f1, uint32_t x2, float f2, uint32_t x3, float f3, uint32_t x4, float f4
 ;, uint32_t x5, float f5, uint32_t x6, float f6, uint32_t x7, float f7, uint32_t x8, float f8
 ;, uint32_t x9, float f9);
-;registros y pila: destination[rdi], x1[?], f1[?], x2[?], f2[?], x3[?], f3[?], x4[?], f4[?]
-;	, x5[?], f5[?], x6[?], f6[?], x7[?], f7[?], x8[?], f8[?],
-;	, x9[?], f9[?]
+;registros y pila: destination[rdi], x1[esi], f1[xmm0], x2[edx], f2[xmm1], x3[ecx], f3[xmm2], x4[r8d], f4[xmm3]
+;	, x5[r9d], f5[xmm4], x6[rbp + 16], f6[xmm5], x7[rbp + 24], f7[xmm6], x8[rbp + 32], f8[xmm7],
+;	, x9[rbp + 40], f9[rbp + 48]
+
+; Considerar que a la pila le estoy agregando el rbp antes de alinearlo con el rsp, por ende tengo, el rbp, luego el rip y 
+; despues recien arrancan los parametros, x6, x7, x8, x9, f9.
+;
+
+
 product_9_f:
 	;prologo
 	push rbp
 	mov rbp, rsp
 
 	;convertimos los flotantes de cada registro xmm en doubles
-	; COMPLETAR
+	cvtss2sd xmm0, xmm0
+  cvtss2sd xmm1, xmm1
+  cvtss2sd xmm2, xmm2
+  cvtss2sd xmm3, xmm3
+  cvtss2sd xmm4, xmm4
+  cvtss2sd xmm5, xmm5
+  cvtss2sd xmm6, xmm6
+  cvtss2sd xmm7, xmm7
+  movss xmm8, [rbp + 48]
+  cvtss2sd xmm8, xmm8
 
 	;multiplicamos los doubles en xmm0 <- xmm0 * xmm1, xmmo * xmm2 , ...
-	; COMPLETAR
+	mulsd xmm0, xmm1
+  mulsd xmm0, xmm2
+  mulsd xmm0, xmm3
+  mulsd xmm0, xmm4
+  mulsd xmm0, xmm5
+  mulsd xmm0, xmm6
+  mulsd xmm0, xmm7
+  mulsd xmm0, xmm8
 
 	; convertimos los enteros en doubles y los multiplicamos por xmm0.
-	; COMPLETAR
+	cvtsi2sd xmm1, esi
+  cvtsi2sd xmm2, edx
+  cvtsi2sd xmm3, ecx
+  cvtsi2sd xmm4, r8d
+  cvtsi2sd xmm5, r9d
+  cvtsi2sd xmm6, [rbp + 16]
+  cvtsi2sd xmm7, [rbp + 24]
+  cvtsi2sd xmm8, [rbp + 32]
+  cvtsi2sd xmm9, [rbp + 40]
+
+	mulsd xmm0, xmm1
+  mulsd xmm0, xmm2
+  mulsd xmm0, xmm3
+  mulsd xmm0, xmm4
+  mulsd xmm0, xmm5
+  mulsd xmm0, xmm6
+  mulsd xmm0, xmm7
+  mulsd xmm0, xmm8
+  mulsd xmm0, xmm9
+
+  ; Pongo el resultado
+  movsd [rdi], xmm0
 
 	; epilogo
 	pop rbp
