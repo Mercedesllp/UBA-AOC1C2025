@@ -15,8 +15,8 @@ typedef struct nodo_s {
 } nodo_t; //asmdef_size:NODO_SIZE
 
 typedef struct __attribute__((__packed__)) packed_nodo_s {
-    struct packed_nodo_s* next;   //asmdef_offset:PACKED_NODO_OFFSET_NEXT
-    uint8_t categoria;     //asmdef_offset:PACKED_NODO_OFFSET_CATEGORIA
+    struct packed_nodo_s* next;   //asmdef_offset:PACKED_NODO_OFFSET_NEXT 
+    uint8_t categoria;     //asmdef_offset:PACKED_NODO_OFFSET_CATEGORIA 
     uint32_t* arreglo;     //asmdef_offset:PACKED_NODO_OFFSET_ARREGLO
     uint32_t longitud;     //asmdef_offset:PACKED_NODO_OFFSET_LONGITUD
 } packed_nodo_t; //asmdef_size:PACKED_NODO_SIZE

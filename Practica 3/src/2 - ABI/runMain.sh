@@ -13,7 +13,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-valgrind --show-reachable=yes --leak-check=full --error-exitcode=1 ./main
+valgrind --show-reachable=yes --leak-check=full --error-exitcode=1 ./main # --track-origins=yes -> Para trackear de que es el error en la alocacion de memoria (corre mas lento y hace ruido, es como una cpu Valgrind)
 if [ $? -ne 0 ]; then
   echo "  **Error de memoria"
   exit 1
