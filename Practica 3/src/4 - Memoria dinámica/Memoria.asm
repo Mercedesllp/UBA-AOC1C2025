@@ -2,6 +2,7 @@ extern malloc
 extern free
 extern fprintf
 
+NULL EQU 0
 EQUALS EQU 0
 A_BIGGER EQU -1
 B_BIGGER EQU 1
@@ -10,6 +11,7 @@ INCREMENT_1 EQU 1
 END_OF_STRING EQU 0
 
 section .data
+null_str: db 'NULL', 10				; 10 es el salto de linea concatenado a null
 
 section .text
 
@@ -69,15 +71,96 @@ end_cmp:
 ; char* strClone(char* a)
 ; a[rdi]
 strClone:
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
 
+	; Cambio de registro al string
+	mov r15, rdi
+
+	; Obtengo el largo del string
+	call strLen
+
+	; Paso como parametro la longitud del sting al malloc(sizeof(a) * sizeof(char))
+	; sizeof(char) == 1 entonces lo dejo igual
+	mov	edi, eax
+	; para el ultimo simbolo '\0'
+	add edi, 1
+	mov r14d, edi
+
+	; Queda en rax mi puntero al clon
+	call malloc
+	mov rdi, rax
+
+	; Para el char
+	xor rdx, rdx
+loop_clone:
+	cmp r14d, 0
+	je end_clone
+
+	; Obtengo el char y lo ubico en el clon
+	mov dl, byte [r15]
+	mov byte [rdi], dl
+
+	; Incremento punteros y decremento el contador de longitud
+	add rdi, INCREASE_IN_1BYTE
+	add r15, INCREASE_IN_1BYTE
+	sub r14d, 1
+	jmp loop_clone
+
+end_clone:	
+	pop r14
+	pop r15
+	pop rbp
 	ret
 
 ; void strDelete(char* a)
 strDelete:
+	push rbp
+	mov rbp, rsp
+
+	call free
+
+	pop rbp
 	ret
 
 ; void strPrint(char* a, FILE* pFile)
 strPrint:
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+
+	; Muevo los datos a registros no volatiles
+	mov r15, rdi
+	mov r14, rsi
+
+	; Obtengo el largo de la palabra
+	call strLen
+
+	cmp eax, NULL
+	je print_NULL
+
+loop_print:
+	cmp eax, NULL
+	je end_print
+
+	;;;;Printear??
+
+	add r15, INCREASE_IN_1BYTE
+	add r14, INCREASE_IN_1BYTE
+	jmp loop_print
+
+print_NULL:
+	mov rdi, null_str
+	mov rsi, r14
+	call strPrint
+
+end_print:
+	pop r14
+	pop r15
+	pop rbp
 	ret
 
 ; uint32_t strLen(char* a)
