@@ -9,5 +9,7 @@
 
 int main() {
 	/* Acá pueden realizar sus propias pruebas */
+	assert(strCmp("Feros", "Omega 4") == 1);
+	assert(strLen("Feros") == 5);
 	return 0;
 }
