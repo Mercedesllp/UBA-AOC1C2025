@@ -133,8 +133,8 @@ strPrint:
 	push r14
 
 	; Muevo los datos a registros no volatiles
-	mov r15, rdi
-	mov r14, rsi
+	mov r15, rdi	; str
+	mov r14, rsi	; file
 
 	; Obtengo el largo de la palabra
 	call strLen
@@ -142,26 +142,24 @@ strPrint:
 	cmp eax, NULL
 	je print_NULL
 
-loop_print:
-	cmp eax, NULL
-	je end_print
+continue_print:
+	; Ubico al file como primer parametro
+	mov rdi, r14
+	; Ubico al string como el segundo
+	mov rsi, r15
 
-	;;;;Printear??
-
-	add r15, INCREASE_IN_1BYTE
-	add r14, INCREASE_IN_1BYTE
-	jmp loop_print
-
-print_NULL:
-	mov rdi, null_str
-	mov rsi, r14
-	call strPrint
+	call fprintf
 
 end_print:
 	pop r14
 	pop r15
 	pop rbp
 	ret
+
+print_NULL:
+	; Cambio el string a printear por "NULL" 
+	mov r15, null_str
+	jmp continue_print
 
 ; uint32_t strLen(char* a)
 ; a[rdi]
