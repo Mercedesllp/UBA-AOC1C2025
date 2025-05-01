@@ -9,26 +9,29 @@ FALSE EQU 0
 ; Marca un ejercicio como hecho
 TRUE  EQU 1
 
+; Macros del ejercicio
+INDICE_ELEM_SIZE EQU 2
+INVENTARIO_ELEM_SIZE EQU 8
 ; Marca el ejercicio 1A como hecho (`true`) o pendiente (`false`).
 ;
 ; Funciones a implementar:
 ;   - es_indice_ordenado
 global EJERCICIO_1A_HECHO
-EJERCICIO_1A_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
+EJERCICIO_1A_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 
 ; Marca el ejercicio 1B como hecho (`true`) o pendiente (`false`).
 ;
 ; Funciones a implementar:
 ;   - indice_a_inventario
 global EJERCICIO_1B_HECHO
-EJERCICIO_1B_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
+EJERCICIO_1B_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 
 ;########### ESTOS SON LOS OFFSETS Y TAMAÑO DE LOS STRUCTS
 ; Completar las definiciones (serán revisadas por ABI enforcer):
-ITEM_NOMBRE EQU ??
-ITEM_FUERZA EQU ??
-ITEM_DURABILIDAD EQU ??
-ITEM_SIZE EQU ??
+ITEM_NOMBRE EQU 0 					; Inicio del struct
+ITEM_FUERZA EQU 20					; sizeof(18 chars) + 2 de padding para alinearse a 4 bytes(tamanio del elemento mas grande del struct)
+ITEM_DURABILIDAD EQU 24			; sizeof(fueza)
+ITEM_SIZE EQU 28						; sizeof(durabilidad) + 2 de padding para alinearse a 4 bytes
 
 ;; La funcion debe verificar si una vista del inventario está correctamente 
 ;; ordenada de acuerdo a un criterio (comparador)
@@ -59,11 +62,65 @@ es_indice_ordenado:
 	; ubicación según la convención de llamada. Prestá atención a qué
 	; valores son de 64 bits y qué valores son de 32 bits o 8 bits.
 	;
-	; r/m64 = item_t**     inventario
-	; r/m64 = uint16_t*    indice
-	; r/m16 = uint16_t     tamanio
-	; r/m64 = comparador_t comparador
-		ret
+	; rdi = item_t**     inventario
+	; rsi = uint16_t*    indice
+	; dx = uint16_t     tamanio
+	; rcx = comparador_t comparador
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	sub rsp, 8						; alineo la pila
+
+	; Muevo los parametros a registros no volatiles
+	mov r15, rdi					;	inventario
+	mov r14, rsi					;	indice
+	mov r13w, dx					;	tamanio
+	mov r12, rcx					; comparador
+
+	; Hago un iterador
+	xor rbx, rbx
+
+	; A tamanio le resto uno para que sea mi limite de iteracion
+	sub r13w, 1
+
+loop_ej1a:
+	cmp bx, r13w
+	je end_ej1a
+
+	; indice[i] e indice[i+1]
+	; (indice + i*ITEM_ELEM_SIZE_EJ1A) = indice[i]
+	xor rdi, rdi
+	xor rsi, rsi
+	mov di, word [r14 + rbx * INDICE_ELEM_SIZE]
+	mov si, word [r14 + rbx * INDICE_ELEM_SIZE + INDICE_ELEM_SIZE]
+
+	; inventario[indice[i]] e inventario[indice[i]]
+	mov rdi, qword [r15 + rdi * INVENTARIO_ELEM_SIZE]
+	mov rsi, qword [r15 + rsi * INVENTARIO_ELEM_SIZE]
+
+	; comparo los elementos del inventario
+	call r12
+
+	; si no estan bien ordenados termina
+	cmp al, FALSE
+	je end_ej1a
+
+	inc bx
+	jmp loop_ej1a
+
+end_ej1a:
+	add rsp, 8
+	pop rbx
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	pop rbp
+	ret
 
 ;; Dado un inventario y una vista, crear un nuevo inventario que mantenga el
 ;; orden descrito por la misma.
@@ -91,7 +148,51 @@ indice_a_inventario:
 	; ubicación según la convención de llamada. Prestá atención a qué
 	; valores son de 64 bits y qué valores son de 32 bits o 8 bits.
 	;
-	; r/m64 = item_t**  inventario
-	; r/m64 = uint16_t* indice
-	; r/m16 = uint16_t  tamanio
+	; rdi = item_t**  inventario
+	; rsi = uint16_t* indice
+	; rdx = uint16_t  tamanio
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+	push r13
+	sub rsp, 8				; alineo la pila
+
+	; Meto parametros a no volatiles
+	mov r15, rdi			; inventario
+	mov r14, rsi			; indice
+	mov r13w, dx			; tamanio
+
+	; Obtengo el espacio de memoria para el resultado
+	xor rdi, rdi			; Me aseguro la parte superior del registro limpia
+	mov di, r13w			
+	imul rdi, INVENTARIO_ELEM_SIZE
+	call malloc
+
+	; Hago un iterador
+	xor rdx, rdx
+
+loop_ej1b:
+	cmp dx, r13w
+	je end_ej1b
+
+	; indice[i]
+	xor rdi, rdi
+	mov di, word [r14 + rdx * INDICE_ELEM_SIZE]
+
+	; inventario[indice[i]]
+	mov rdi, qword [r15 + rdi * INVENTARIO_ELEM_SIZE]
+
+	; res[i] = inventario[indice[i]]
+	mov qword [rax + rdx * INVENTARIO_ELEM_SIZE], rdi
+
+	inc rdx
+	jmp loop_ej1b
+
+end_ej1b:
+	add rsp, 8
+	pop r13
+	pop r14
+	pop r15
+	pop rbp
 	ret
