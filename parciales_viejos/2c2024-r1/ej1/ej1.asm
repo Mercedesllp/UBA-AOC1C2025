@@ -1,4 +1,5 @@
 extern malloc
+extern free
 
 section .rodata
 ; Acá se pueden poner todas las máscaras y datos que necesiten para el ejercicio
@@ -9,6 +10,9 @@ FALSE EQU 0
 ; Marca un ejercicio como hecho
 TRUE  EQU 1
 
+SIZE_MAPA EQU 255 * 255
+SIZE_ELEM_MAPA EQU 8
+NULL EQU 0
 ; Marca el ejercicio 1A como hecho (`true`) o pendiente (`false`).
 ;
 ; Funciones a implementar:
@@ -21,7 +25,7 @@ EJERCICIO_1A_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
 ; Funciones a implementar:
 ;   - contarCombustibleAsignado
 global EJERCICIO_1B_HECHO
-EJERCICIO_1B_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
+EJERCICIO_1B_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 
 ; Marca el ejercicio 1C como hecho (`true`) o pendiente (`false`).
 ;
@@ -32,10 +36,10 @@ EJERCICIO_1C_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
 
 ;########### ESTOS SON LOS OFFSETS Y TAMAÑO DE LOS STRUCTS
 ; Completar las definiciones (serán revisadas por ABI enforcer):
-ATTACKUNIT_CLASE EQU ??
-ATTACKUNIT_COMBUSTIBLE EQU ??
-ATTACKUNIT_REFERENCES EQU ??
-ATTACKUNIT_SIZE EQU ??
+ATTACKUNIT_CLASE EQU 0							; Inicio
+ATTACKUNIT_COMBUSTIBLE EQU 12				; sizeof(11 char) + 1 padding (alineado a 2 bytes)
+ATTACKUNIT_REFERENCES EQU 14				; sizeof(uint16_t)
+ATTACKUNIT_SIZE EQU 16							; sizeof(uint8_t) + 1 de padding
 
 global optimizar
 optimizar:
@@ -43,15 +47,149 @@ optimizar:
 	; ubicación según la convención de llamada. Prestá atención a qué
 	; valores son de 64 bits y qué valores son de 32 bits o 8 bits.
 	;
-	; r/m64 = mapa_t           mapa
-	; r/m64 = attackunit_t*    compartida
-	; r/m64 = uint32_t*        fun_hash(attackunit_t*)
+	; rdi = mapa_t           mapa
+	; rsi = attackunit_t*    compartida
+	; rdx = uint32_t*        fun_hash(attackunit_t*)
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	sub rsp, 8
+
+	; Pongo los parametros de entrada en no volatiles
+	mov r15, rdi				; mapa
+	mov r14, rsi				; compartida
+	mov r13, rdx				; fun_hash
+
+	; Iterador
+	xor r12, r12
+
+loop_ej1a:
+	cmp r12, SIZE_MAPA
+	je end_ej1a
+
+	; obtengo actual (mapa[i][j])
+	mov rdi, qword [r15 + r12 * SIZE_ELEM_MAPA]
+
+	; actual == NULL ?
+	cmp rdi, NULL
+	je continue_loop_ej1a
+
+	; actual == compartida ? (Es el ptr a la misma attackunit)
+	cmp rdi, rsi
+	je continue_loop_ej1a
+
+	; fun_hash(actual) == fun_hash(compartida) ?
+	call r13						; fun_hash(actual)
+	mov rbx, rax
+	mov rdi, r14
+	call r13						; fun_hash(compartida)
+
+	cmp ebx, eax
+	jne continue_loop_ej1a
+
+	; compartida->references++;
+	inc byte [r14 + ATTACKUNIT_REFERENCES]
+
+	; actual->references--;
+	mov rdi, qword [r15 + r12 * SIZE_ELEM_MAPA]
+	dec byte [rdi + ATTACKUNIT_REFERENCES]
+	
+	; mapa[i][j] = compartida
+	mov qword [r15 + r12 * SIZE_ELEM_MAPA], r14
+
+	; actual->references == 0 ?
+	cmp byte [rdi + ATTACKUNIT_REFERENCES], 0
+	jne continue_loop_ej1a
+
+	call free
+
+continue_loop_ej1a:
+	inc r12
+	jmp loop_ej1a
+
+end_ej1a:
+	add rsp, 8
+	pop rbx
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	pop rbp
 	ret
 
 global contarCombustibleAsignado
 contarCombustibleAsignado:
-	; r/m64 = mapa_t           mapa
-	; r/m64 = uint16_t*        fun_combustible(char*)
+	; rdi = mapa_t           mapa
+	; rsi = uint16_t*        fun_combustible(char*)
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	sub rsp, 8
+
+	; Pongo los parametros de entrada en no volatiles
+	mov r15, rdi				; mapa
+	mov r14, rsi				; fun_combustible
+
+	; Iterador
+	xor r13, r13
+
+	; Acumulador del resultado
+	xor r12, r12
+
+loop_ej1b:
+	cmp r13, SIZE_MAPA
+	je end_ej1b
+
+	; mapa[i][j] = *attackunit
+	mov rbx, qword [r15 + r13 * SIZE_ELEM_MAPA]
+
+	; mapa[i][j] == NULL ?
+	cmp rbx, NULL
+	je continue_loop_ej1b
+
+	; mapa[i][j]->clase ptr
+	mov rdi, rbx + ATTACKUNIT_CLASE
+
+	; fun_combustible(mapa[i][j]->clase) -> base
+	call r14
+
+	; Obtengo base en 32 bits
+	xor rdi, rdi
+	mov di, ax					
+
+	; Obtengo mapa[i][j]->combustible en 32 bits
+	xor rsi, rsi
+	mov si, word [rbx + ATTACKUNIT_COMBUSTIBLE]
+
+	; mapa[i][j]->combustible - base
+	sub esi, edi
+
+	; Lo agrego al resultado
+	add r12d, esi
+
+continue_loop_ej1b:
+	inc r13
+	jmp loop_ej1b
+
+	; Resultado final
+	mov rax, r12
+
+end_ej1b:
+	add rsp, 8
+	pop rbx
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	pop rbp
 	ret
 
 global modificarUnidad

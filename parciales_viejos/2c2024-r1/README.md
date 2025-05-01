@@ -47,7 +47,7 @@ Dado que es común que los jugadores reposicionen y modifiquen los niveles de co
 equivalentes utilizando en su lugar la versión pasada por parámetro. La solución debe hacer un uso apropiado
 de la memoria, teniendo en cuenta que las referencias a unidades solo son guardadas en el mapa.
 
-`void optimizar(mapa_t mapa, personaje_t* compartida, uint32_t *fun_hash)`
+`void optimizar(mapa_t mapa, attackunit_t* compartida, uint32_t *fun_hash)`
 
 **b)** Programar en lenguaje assembler una función
 
