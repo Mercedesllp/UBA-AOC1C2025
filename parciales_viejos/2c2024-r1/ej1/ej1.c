@@ -10,7 +10,7 @@
  * Funciones a implementar:
  *   - es_indice_ordenado
  */
-bool EJERCICIO_1A_HECHO = false;
+bool EJERCICIO_1A_HECHO = true;
 
 /**
  * Marca el ejercicio 1B como hecho (`true`) o pendiente (`false`).
@@ -26,7 +26,7 @@ bool EJERCICIO_1B_HECHO = true;
  * Funciones a implementar:
  *   - modificarUnidad
  */
-bool EJERCICIO_1C_HECHO = false;
+bool EJERCICIO_1C_HECHO = true;
 
 /**
  * OPCIONAL: implementar en C
@@ -71,4 +71,18 @@ uint32_t contarCombustibleAsignado(mapa_t mapa, uint16_t (*fun_combustible)(char
  * OPCIONAL: implementar en C
  */
 void modificarUnidad(mapa_t mapa, uint8_t x, uint8_t y, void (*fun_modificar)(attackunit_t*)) {
+  attackunit_t* actual = mapa[x][y];
+
+  if(actual == NULL){
+    return;
+  }
+  if(actual->references > 1){
+    attackunit_t* temp = malloc(sizeof(attackunit_t));
+    actual->references--;
+    *temp = *actual;
+    temp->references = 1;
+    mapa[x][y] = temp;
+  }
+  fun_modificar(mapa[x][y]);
+  return;
 }

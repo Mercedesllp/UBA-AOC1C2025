@@ -18,7 +18,7 @@ NULL EQU 0
 ; Funciones a implementar:
 ;   - optimizar
 global EJERCICIO_1A_HECHO
-EJERCICIO_1A_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
+EJERCICIO_1A_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 
 ; Marca el ejercicio 1B como hecho (`true`) o pendiente (`false`).
 ;
@@ -32,7 +32,7 @@ EJERCICIO_1B_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 ; Funciones a implementar:
 ;   - modificarUnidad
 global EJERCICIO_1C_HECHO
-EJERCICIO_1C_HECHO: db FALSE ; Cambiar por `TRUE` para correr los tests.
+EJERCICIO_1C_HECHO: db TRUE ; Cambiar por `TRUE` para correr los tests.
 
 ;########### ESTOS SON LOS OFFSETS Y TAMAÑO DE LOS STRUCTS
 ; Completar las definiciones (serán revisadas por ABI enforcer):
@@ -179,10 +179,10 @@ continue_loop_ej1b:
 	inc r13
 	jmp loop_ej1b
 
+end_ej1b:
 	; Resultado final
 	mov rax, r12
 
-end_ej1b:
 	add rsp, 8
 	pop rbx
 	pop r12
@@ -194,8 +194,77 @@ end_ej1b:
 
 global modificarUnidad
 modificarUnidad:
-	; r/m64 = mapa_t           mapa
-	; r/m8  = uint8_t          x
-	; r/m8  = uint8_t          y
-	; r/m64 = void*            fun_modificar(attackunit_t*)
+	; rdi = mapa_t           mapa
+	; sil  = uint8_t          x
+	; dl = uint8_t          y
+	; rcx = void*            fun_modificar(attackunit_t*)
+	push rbp
+	mov rbp, rsp
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	sub rsp, 8
+
+	; Pongo los parametros en no volatiles
+	mov r15, rdi					; mapa
+	mov r14b, sil 				; x
+	mov r13b, dl					; y
+	mov r12, rcx					; fun_modificar
+
+	; Extiendo a x e y a 64 bits
+	movzx r14, r14b 
+	movzx r13, r13b 
+
+	; Obtengo la posicion lineal (x * FILAS) + y
+	imul r14, 255
+	add r14, r13
+
+	; actual = mapa[x][y]
+	mov rbx, qword [r15 + r14 * SIZE_ELEM_MAPA]
+
+	; actual == NULL ?
+	cmp rbx, NULL
+	je fin_NULL_ej1c
+
+	; actual->references
+	mov r8b, byte [rbx + ATTACKUNIT_REFERENCES]
+
+	; actual->references > 1
+	cmp r8b, 1
+	je fin_ej1c
+
+	; malloc(sizeof(attackunit_t))
+	mov rdi, ATTACKUNIT_SIZE
+	call malloc
+
+	; actual->references--;
+	dec byte [rbx + ATTACKUNIT_REFERENCES]
+
+	; *temp = *actual
+	mov r9, qword [rbx]						; Copio primeros 8 bytes del attackunit
+	mov qword [rax], r9
+	mov r9, qword [rbx + 8]
+	mov qword [rax + 8], r9				; Copio siguientes 8 bytes del attackunit
+
+	; temp->references = 1
+	mov byte [rax + ATTACKUNIT_REFERENCES], 1
+
+	; mapa[x][y] = temp;
+	mov qword [r15 + r14 * SIZE_ELEM_MAPA], rax
+
+fin_ej1c:
+	; fun_modificar(mapa[x][y])
+	mov rdi, qword [r15 + r14 * SIZE_ELEM_MAPA]
+	call r12
+
+fin_NULL_ej1c:
+	add rsp, 8
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	pop rbx
+	pop rbp
 	ret
