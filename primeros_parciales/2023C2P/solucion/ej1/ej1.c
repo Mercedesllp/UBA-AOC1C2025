@@ -39,7 +39,8 @@ uint8_t contar_pagos_aprobados(list_t* pList, char* usuario){
   uint8_t resultado = 0;
   
   while(actual != NULL){
-    if((strcmp(actual->data->pagador, usuario) == 0) && (actual->data->aprobado)){
+    // coincide el usuario con el cobrador y es aprobado el pago
+    if((strcmp(actual->data->cobrador, usuario) == 0) && (actual->data->aprobado)){
       resultado++;
     }
     actual = actual->next;
@@ -52,7 +53,8 @@ uint8_t contar_pagos_rechazados(list_t* pList, char* usuario){
   uint8_t resultado = 0;
   
   while(actual != NULL){
-    if((strcmp(actual->data->pagador, usuario) == 0) && !(actual->data->aprobado)){
+    // coincide el usuario con el cobrador y es rechazado el pago
+    if((strcmp(actual->data->cobrador, usuario) == 0) && !(actual->data->aprobado)){
       resultado++;
     }
     actual = actual->next;
@@ -61,5 +63,31 @@ uint8_t contar_pagos_rechazados(list_t* pList, char* usuario){
 }
 
 pagoSplitted_t* split_pagos_usuario(list_t* pList, char* usuario){
+  pagoSplitted_t* res = malloc(sizeof(pagoSplitted_t));
 
+  res->cant_aprobados = contar_pagos_aprobados(pList, usuario);
+  res->cant_rechazados = contar_pagos_rechazados(pList, usuario);
+  res->aprobados = malloc(sizeof(pago_t*)*res->cant_aprobados);
+  res->rechazados = malloc(sizeof(pago_t*)*res->cant_rechazados);
+  
+  listElem_t* actual = pList->first;
+  // Iteradores para aprobados y rechazados
+  int i = 0;
+  int j = 0;
+
+  // Recorro toda la lista y cuando coincide el cobrador con el usuario 
+  // veo el estado del pago
+  while(actual != NULL){
+    if(strcmp(actual->data->cobrador, usuario) == 0){
+      if (actual->data->aprobado){
+        res->aprobados[i] = actual->data;
+        i++;
+      }else{
+        res->rechazados[j] = actual->data;
+        j++;
+      }
+    }
+    actual = actual->next;
+  }
+  return res;
 }

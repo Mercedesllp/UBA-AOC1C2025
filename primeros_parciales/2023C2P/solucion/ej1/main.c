@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 #include "ej1.h"
 
@@ -86,8 +87,26 @@ int main (void){
   
   // Acá pueden probar su código
 
-  assert(contar_pagos_aprobados(list,"susan") == 1);
+  pagoSplitted_t* prueba = split_pagos_usuario(list, "susan");
+  
+  assert(contar_pagos_aprobados(list,"susan") == 3);
+  assert(contar_pagos_rechazados(list,"bob") == 1);
+  
+  assert(prueba->cant_aprobados == 3);
+  assert(prueba->cant_rechazados == 1);
+  fprintf("%s", prueba->aprobados[1]->pagador);
+  assert(strcmp(prueba->aprobados[1]->pagador, "bob") == 0);
 
+  printf("OFFSET_CANT_APROBADOS = %lu\n", offsetof(pagoSplitted_t, cant_aprobados));
+  printf("OFFSET_CANT_RECHAZADOS = %lu\n", offsetof(pagoSplitted_t, cant_rechazados));
+  printf("OFFSET_APROBADOS = %lu\n", offsetof(pagoSplitted_t, aprobados));
+  printf("OFFSET_RECHAZADOS = %lu\n", offsetof(pagoSplitted_t, rechazados));
+  printf("Size of pagoSpli %lu\n", sizeof(pagoSplitted_t));
+
+  free(prueba->aprobados);
+  free(prueba->rechazados);
+  free(prueba);
+  listDelete(list);
 	return 0;    
 }
 
