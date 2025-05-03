@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
+#include <stddef.h> // Para ver los offsets
 
 /**
 *	crea y destruye a una lista vacía
@@ -65,5 +66,8 @@ void run_tests(){
 
 int main (void){
 	run_tests();
+
+	// Ver offsets
+	//printf("OFFSET NODE:\n %lu\n %lu\n %lu \n %lu\n SIZE: %lu\n", offsetof(string_proc_node, next), offsetof(string_proc_node, previous), offsetof(string_proc_node, type), offsetof(string_proc_node, hash), sizeof(string_proc_node));
 	return 0;    
 }

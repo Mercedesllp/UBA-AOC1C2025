@@ -1,15 +1,45 @@
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
+	string_proc_list* list = malloc(sizeof(string_proc_list));
+	list->first = list->last = NULL;
+	return list;
 }
 
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
+	string_proc_node* node = malloc(sizeof(string_proc_node));
+	node->next = node->previous = NULL;
+	node->hash = hash;
+	node->type = type;
+	return node;
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+	string_proc_node* newNode = string_proc_node_create(type, hash);
+	
+	if(list->first == NULL){
+		list->first = list->last = newNode;
+	} else{
+		string_proc_node* oldLast = list->last;
+		list->last = oldLast->next = newNode;
+		newNode->previous = oldLast;
+	}
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
+	string_proc_node* actualNode = list->first;
+	char* newHash = strdup(hash);					// Usa memoria dinamica para duplicarlo, si no, luego no puedo hacer free
+
+	while(actualNode != NULL){
+		if(actualNode->type == type){
+			char* temp = newHash;
+			newHash = str_concat(newHash, actualNode->hash);
+			free(temp);
+		}
+		actualNode = actualNode->next;
+	}
+
+	return newHash;
 }
 
 
